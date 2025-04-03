@@ -1,14 +1,14 @@
 //
-//  QuizQuestionMock.swift
+//  QuestionFactory.swift
 //  MovieQuiz
 //
-//  Created by Сергей Розов on 20.03.2025.
+//  Created by Сергей Розов on 31.03.2025.
 //
 
 import Foundation
 
-struct QuizQuestionMock {
-    static let questions: [QuizQuestionModel] = [
+class QuestionFactory: QuestionFactoryProtocol {
+    private let questions: [QuizQuestionModel] = [
         QuizQuestionModel(image: "The Godfather", text: "Рейтинг этого фильма больше чем 6?", correctAnswer: true),
         QuizQuestionModel(image: "The Dark Knight", text: "Рейтинг этого фильма больше чем 6?", correctAnswer: true),
         QuizQuestionModel(image: "Kill Bill", text: "Рейтинг этого фильма больше чем 6?", correctAnswer: true),
@@ -20,4 +20,19 @@ struct QuizQuestionMock {
         QuizQuestionModel(image: "Tesla", text: "Рейтинг этого фильма больше чем 6?", correctAnswer: false),
         QuizQuestionModel(image: "Vivarium", text: "Рейтинг этого фильма больше чем 6?", correctAnswer: false)
     ]
+    
+    weak var delegate: QuestionFactoryDelegate?
+    
+    init(delegate: QuestionFactoryDelegate) {
+        self.delegate = delegate
+    }
+    
+    func requestNextQuestion() {
+        guard let index = (0..<questions.count).randomElement() else {
+            delegate?.didReceiveNextQuestion(question: nil)
+            return
+        }
+        let question = questions[safe: index]
+        delegate?.didReceiveNextQuestion(question: question)
+    }
 }
