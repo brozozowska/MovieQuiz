@@ -15,6 +15,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     private var currentQuestionIndex = 0
     private var currentQuestion: QuizQuestionModel?
     private var correctAnswers = 0
+    private let statisticService: StatisticServiceProtocol = StatisticService()
         
     // MARK: - Lifecycle
     // 1. Загружаем ViewController, создаём экземпляр фабрики вопросов и запрашиваем первый вопрос, создаём экземпляр alertPresenter
@@ -87,7 +88,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         counterLabel.text = step.questionNumber
     }
     
-    // Конвертер QuizResultsModel в AlertModel и запуск presenterAlert() внутри делегата
+    // Показываем окно результата. Конвертер QuizResultsModel в AlertModel и запуск presenterAlert() внутри делегата
     private func show(result: QuizResultsModel) {
         alertPresenter?.showAlert(
             title: result.title,
@@ -101,7 +102,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         }
     }
     
-    // 4. Показываем результат и переходим к методу showNextQuestionOrResult()
+    // 4. Показываем результат ответа и переходим к методу showNextQuestionOrResult()
     private func showAnswerResult(isCorrect: Bool) {
         imageView.layer.masksToBounds = true
         imageView.layer.borderWidth = 8
@@ -120,11 +121,19 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         }
     }
     
-    // 5. Формируем данные для модели QuizResultsModel и запускаем метод show(result:) или запрашиваем следующий вопрос
+    // 5. Формируем данные для модели QuizResultsModel, обновляем статистику перед показом и запускаем метод show(result:) или запрашиваем следующий вопрос
     private func showNextQuestionOrResults() {
         if currentQuestionIndex == questionsAmount - 1 {
+            statisticService.store(correct: correctAnswers, total: questionsAmount)
+            let bestGame = statisticService.bestGame
+            let totalAccuracy = String(format: "%.2f", statisticService.totalAccuracy)
             let title = "Этот раунд окончен!"
-            let text = "Ваш результат: \(correctAnswers)/10"
+            let text = """
+                Ваш результат: \(correctAnswers)/\(questionsAmount)
+                Количество сыгранных квизов: \(statisticService.gamesCount)
+                Рекорд: \(bestGame.correct)/\(bestGame.total) (\(bestGame.date.dateTimeString))
+                Средняя точность: \(totalAccuracy)%
+                """
             let buttonText = "Сыграть ещё раз"
             show(result: QuizResultsModel(title: title, text: text, buttonText: buttonText))
         } else {

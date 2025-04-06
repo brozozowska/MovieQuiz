@@ -7,7 +7,7 @@
 
 import Foundation
 
-class QuestionFactory: QuestionFactoryProtocol {
+final class QuestionFactory: QuestionFactoryProtocol {
     private let questions: [QuizQuestionModel] = [
         QuizQuestionModel(image: "The Godfather", text: "Рейтинг этого фильма больше чем 6?", correctAnswer: true),
         QuizQuestionModel(image: "The Dark Knight", text: "Рейтинг этого фильма больше чем 6?", correctAnswer: true),
@@ -18,7 +18,9 @@ class QuestionFactory: QuestionFactoryProtocol {
         QuizQuestionModel(image: "Old", text: "Рейтинг этого фильма больше чем 6?", correctAnswer: false),
         QuizQuestionModel(image: "The Ice Age Adventures of Buck Wild", text: "Рейтинг этого фильма больше чем 6?", correctAnswer: false),
         QuizQuestionModel(image: "Tesla", text: "Рейтинг этого фильма больше чем 6?", correctAnswer: false),
-        QuizQuestionModel(image: "Vivarium", text: "Рейтинг этого фильма больше чем 6?", correctAnswer: false)
+        QuizQuestionModel(image: "Vivarium", text: "Рейтинг этого фильма больше чем 6?", correctAnswer: false),
+        QuizQuestionModel(image: "The Lord of the Rings", text: "Рейтинг этого фильма больше чем 6?", correctAnswer: true),
+        QuizQuestionModel(image: "The Room", text: "Рейтинг этого фильма больше чем 6?", correctAnswer: false)
     ]
     
     weak var delegate: QuestionFactoryDelegate?

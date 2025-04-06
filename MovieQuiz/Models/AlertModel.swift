@@ -7,7 +7,6 @@
 
 import Foundation
 
-// модель для результатов раунда квиза
 struct AlertModel {
     let title: String
     let message: String
