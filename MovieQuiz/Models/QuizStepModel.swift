@@ -7,12 +7,8 @@
 
 import UIKit
 
-// модель для состояния "Вопрос показан"
 struct QuizStepModel {
-    // картинка с афишей фильма
     let image: UIImage
-    // вопрос о рейтинге
     let question: String
-    // строка с порядковым номером этого вопроса
     let questionNumber: String
 }
