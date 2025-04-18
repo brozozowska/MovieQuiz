@@ -14,8 +14,18 @@ final class AlertPresenter {
         self.delegate = delegate
     }
     
-    func showAlert(title: String, message: String, buttonText: String, completion: (() -> Void)?) {
-        let alertModel = AlertModel(title: title, message: message, buttonText: buttonText, completion: completion)
+    func showAlert(
+        title: String,
+        message: String,
+        buttonText: String,
+        completion: (() -> Void)?
+    ) {
+        let alertModel = AlertModel(
+            title: title,
+            message: message,
+            buttonText: buttonText,
+            completion: completion
+        )
         delegate?.presentAlert(model: alertModel)
     }
 }

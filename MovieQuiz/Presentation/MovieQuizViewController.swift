@@ -7,6 +7,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     @IBOutlet private weak var counterLabel: UILabel!
     @IBOutlet private weak var yesButton: UIButton!
     @IBOutlet private weak var noButton: UIButton!
+    @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
     
     // MARK: - Private Properties
     private let questionsAmount = 10
@@ -18,16 +19,28 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     private let statisticService: StatisticServiceProtocol = StatisticService()
         
     // MARK: - Lifecycle
-    // 1. Загружаем ViewController, создаём экземпляр фабрики вопросов и запрашиваем первый вопрос, создаём экземпляр alertPresenter
+    // 1. Загружаем ViewController, показываем индикатор загрузки, создаём экземпляр QuestionFactory, инициализируем загрузку и делегата, создаём экземпляр alertPresenter и инициализируем делегата
+    // В случае успеха загрузки запускаем методы didLoadDataFromServer() и didReceiveNextQuestion(question:), в случае ошибки загрузки — метод didFailToLoadData(with:)
     override func viewDidLoad() {
         super.viewDidLoad()
-        questionFactory = QuestionFactory(delegate: self)
-        questionFactory?.requestNextQuestion()
+        showLoadingIndicator()
+        questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
+        questionFactory?.loadData()
         alertPresenter = AlertPresenter(delegate: self)
     }
     
     // MARK: - QuestionFactoryDelegate
-    // 2. Получаем вопрос, конвертируем его в QuizStepModel и запускаем метод show(step:)
+    // 2. Скрываем индикатор загрузки, получаем вопрос, конвертируем его в QuizStepModel и запускаем метод show(step:)
+    // Или запускаем методом showNetworkError(message:)
+    func didLoadDataFromServer() {
+        hideLoadingIndicator()
+        questionFactory?.requestNextQuestion()
+    }
+    
+    func didFailToLoadData(with error: Error) {
+        showNetworkError(message: error.localizedDescription)
+    }
+    
     func didReceiveNextQuestion(question: QuizQuestionModel?) {
         guard let question else { return }
         currentQuestion = question
@@ -36,7 +49,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             self?.show(step: viewModel)
         }
     }
-    
+        
     // MARK: - AlertPresenterDelegate
     // 6. Отображаем алерт с кнопкой на основе созданного экземпляра alertModel и запускаем действие completion при нажатии
     func presentAlert(model: AlertModel) {
@@ -73,22 +86,32 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         noButton.isUserInteractionEnabled = true
     }
     
+    private func showLoadingIndicator() {
+        activityIndicator.isHidden = false
+        activityIndicator.startAnimating()
+    }
+    
+    private func hideLoadingIndicator() {
+        activityIndicator.isHidden = true
+        activityIndicator.stopAnimating()
+    }
+    
     // Конвертер QuizQuestionModel в QuizStepModel
     private func convert(model: QuizQuestionModel) -> QuizStepModel {
-        let image = UIImage(named: model.image) ?? UIImage()
+        let image = UIImage(data: model.image) ?? UIImage()
         let question = model.text
         let questionNumber = "\(currentQuestionIndex + 1)/\(questionsAmount)"
         return QuizStepModel(image: image, question: question, questionNumber: questionNumber)
     }
     
-    // Изменение UI на основе QuizStepModel
+    // Изменение UI на основе QuizStepModel — показываем вопрос на экране
     private func show(step: QuizStepModel) {
         imageView.image = step.image
         textLabel.text = step.question
         counterLabel.text = step.questionNumber
     }
     
-    // Показываем окно результата. Конвертер QuizResultsModel в AlertModel и запуск presenterAlert() внутри делегата
+    // Конвертируем полученные данные QuizResultsModel в AlertModel, обнуляем ответы пользователя и запускаем presentAlert(model:) с текстом результата
     private func show(result: QuizResultsModel) {
         alertPresenter?.showAlert(
             title: result.title,
@@ -139,6 +162,22 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         } else {
             currentQuestionIndex += 1
             self.questionFactory?.requestNextQuestion()
+        }
+    }
+    
+    // Формируем текст ошибки, обнуляем ответы пользователя, пытаемся повторно загрузить данные и запускаем presentAlert(model:) с текстом ошибки
+    private func showNetworkError(message: String) {
+        hideLoadingIndicator()
+        let title = "Ошибка"
+        let message = message
+        let buttonText = "Попробовать ещё раз"
+        alertPresenter?.showAlert(
+            title: title,
+            message: message,
+            buttonText: buttonText,
+        ) { [weak self] in
+            guard let self else { return }
+            self.questionFactory?.loadData()
         }
     }
 }
