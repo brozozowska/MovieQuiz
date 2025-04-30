@@ -32,10 +32,6 @@ final class QuestionFactory: QuestionFactoryProtocol {
     }
     
     func loadData() {
-        guard movies.isEmpty else {
-            delegate?.didLoadDataFromServer()
-            return
-        }
         
         moviesLoader.loadMovies { [weak self] result in
             DispatchQueue.main.async {

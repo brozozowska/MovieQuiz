@@ -10,10 +10,9 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
     
     // MARK: - Private Properties
-    private let questionsAmount = 10
+    private let presenter = MovieQuizPresenter()
     private var alertPresenter: AlertPresenter?
     private var questionFactory: QuestionFactoryProtocol?
-    private var currentQuestionIndex = 0
     private var currentQuestion: QuizQuestionModel?
     private var correctAnswers = 0
     private let statisticService: StatisticServiceProtocol = StatisticService()
@@ -44,7 +43,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     func didReceiveNextQuestion(question: QuizQuestionModel?) {
         guard let question else { return }
         currentQuestion = question
-        let viewModel = convert(model: question)
+        let viewModel = presenter.convert(model: question)
         DispatchQueue.main.async { [weak self] in
             self?.show(step: viewModel)
         }
@@ -96,14 +95,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         activityIndicator.stopAnimating()
     }
     
-    // Конвертер QuizQuestionModel в QuizStepModel
-    private func convert(model: QuizQuestionModel) -> QuizStepModel {
-        let image = UIImage(data: model.image) ?? UIImage()
-        let question = model.text
-        let questionNumber = "\(currentQuestionIndex + 1)/\(questionsAmount)"
-        return QuizStepModel(image: image, question: question, questionNumber: questionNumber)
-    }
-    
     // Изменение UI на основе QuizStepModel — показываем вопрос на экране
     private func show(step: QuizStepModel) {
         imageView.image = step.image
@@ -119,7 +110,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             buttonText: result.buttonText
         ) { [weak self] in
             guard let self else { return }
-            self.currentQuestionIndex = 0
+            self.presenter.resetQuestionIndex()
             self.correctAnswers = 0
             self.questionFactory?.requestNextQuestion()
         }
@@ -146,13 +137,13 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     
     // 5. Формируем данные для модели QuizResultsModel, обновляем статистику перед показом и запускаем метод show(result:) или запрашиваем следующий вопрос
     private func showNextQuestionOrResults() {
-        if currentQuestionIndex == questionsAmount - 1 {
-            statisticService.store(correct: correctAnswers, total: questionsAmount)
+        if presenter.isLastQuestion() {
+            statisticService.store(correct: correctAnswers, total: presenter.questionsAmount)
             let bestGame = statisticService.bestGame
             let totalAccuracy = String(format: "%.2f", statisticService.totalAccuracy)
             let title = "Этот раунд окончен!"
             let text = """
-                Ваш результат: \(correctAnswers)/\(questionsAmount)
+                Ваш результат: \(correctAnswers)/\(presenter.questionsAmount)
                 Количество сыгранных квизов: \(statisticService.gamesCount)
                 Рекорд: \(bestGame.correct)/\(bestGame.total) (\(bestGame.date.dateTimeString))
                 Средняя точность: \(totalAccuracy)%
@@ -160,7 +151,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             let buttonText = "Сыграть ещё раз"
             show(result: QuizResultsModel(title: title, text: text, buttonText: buttonText))
         } else {
-            currentQuestionIndex += 1
+            presenter.switchToNextQuestion()
             self.questionFactory?.requestNextQuestion()
         }
     }
@@ -177,6 +168,8 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             buttonText: buttonText,
         ) { [weak self] in
             guard let self else { return }
+            presenter.resetQuestionIndex()
+            self.correctAnswers = 0
             self.questionFactory?.loadData()
         }
     }
