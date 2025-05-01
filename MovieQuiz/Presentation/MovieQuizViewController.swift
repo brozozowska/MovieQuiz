@@ -13,7 +13,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     private let presenter = MovieQuizPresenter()
     private var alertPresenter: AlertPresenter?
     private var questionFactory: QuestionFactoryProtocol?
-    private var currentQuestion: QuizQuestionModel?
     private var correctAnswers = 0
     private let statisticService: StatisticServiceProtocol = StatisticService()
         
@@ -42,12 +41,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     }
     
     func didReceiveNextQuestion(question: QuizQuestionModel?) {
-        guard let question else { return }
-        currentQuestion = question
-        let viewModel = presenter.convert(model: question)
-        DispatchQueue.main.async { [weak self] in
-            self?.show(step: viewModel)
-        }
+        presenter.didReceiveNextQuestion(question: question)
     }
         
     // MARK: - AlertPresenterDelegate
@@ -65,13 +59,11 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     // 3. Проверяем нажатие кнопок и переходим к методу showAnswerResult()
     @IBAction private func yesButtonClicked(_ sender: UIButton) {
         disableButtons()
-        presenter.currentQuestion = currentQuestion
         presenter.yesButtonClicked()
     }
         
     @IBAction private func noButtonClicked(_ sender: UIButton) {
         disableButtons()
-        presenter.currentQuestion = currentQuestion
         presenter.noButtonClicked()
     }
     
@@ -97,14 +89,14 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     }
     
     // Изменение UI на основе QuizStepModel — показываем вопрос на экране
-    private func show(step: QuizStepModel) {
+    func show(step: QuizStepModel) {
         imageView.image = step.image
         textLabel.text = step.question
         counterLabel.text = step.questionNumber
     }
     
     // Конвертируем полученные данные QuizResultsModel в AlertModel, обнуляем ответы пользователя и запускаем presentAlert(model:) с текстом результата
-    private func show(result: QuizResultsModel) {
+    func show(result: QuizResultsModel) {
         alertPresenter?.showAlert(
             title: result.title,
             message: result.text,
@@ -130,7 +122,9 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self else { return }
-            self.showNextQuestionOrResults()
+            self.presenter.correctAnswers = self.correctAnswers
+            self.presenter.questionFactory = self.questionFactory
+            self.presenter.showNextQuestionOrResults()
             self.imageView.layer.borderWidth = 0
             self.enableButtons()
         }
