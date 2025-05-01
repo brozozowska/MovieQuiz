@@ -23,6 +23,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     override func viewDidLoad() {
         super.viewDidLoad()
         showLoadingIndicator()
+        presenter.viewController = self
         questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
         questionFactory?.loadData()
         alertPresenter = AlertPresenter(delegate: self)
@@ -64,14 +65,14 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     // 3. Проверяем нажатие кнопок и переходим к методу showAnswerResult()
     @IBAction private func yesButtonClicked(_ sender: UIButton) {
         disableButtons()
-        guard let currentQuestion else { return }
-        showAnswerResult(isCorrect: currentQuestion.correctAnswer == true)
+        presenter.currentQuestion = currentQuestion
+        presenter.yesButtonClicked()
     }
         
     @IBAction private func noButtonClicked(_ sender: UIButton) {
         disableButtons()
-        guard let currentQuestion else { return }
-        showAnswerResult(isCorrect: currentQuestion.correctAnswer == false)
+        presenter.currentQuestion = currentQuestion
+        presenter.noButtonClicked()
     }
     
     // MARK: - Private Methods
@@ -117,7 +118,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     }
     
     // 4. Показываем результат ответа и переходим к методу showNextQuestionOrResult()
-    private func showAnswerResult(isCorrect: Bool) {
+    func showAnswerResult(isCorrect: Bool) {
         imageView.layer.masksToBounds = true
         imageView.layer.borderWidth = 8
         imageView.layer.cornerRadius = 20
