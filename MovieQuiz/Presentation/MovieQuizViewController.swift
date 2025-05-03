@@ -1,9 +1,10 @@
 import UIKit
 
-final class MovieQuizViewController: UIViewController {
+final class MovieQuizViewController: UIViewController, MovieQuizViewControllerProtocol {
     // MARK: - IB Outlets
     @IBOutlet private weak var imageView: UIImageView!
     @IBOutlet private weak var textLabel: UILabel!
+    @IBOutlet private weak var questionLabel: UILabel!
     @IBOutlet private weak var counterLabel: UILabel!
     @IBOutlet private weak var yesButton: UIButton!
     @IBOutlet private weak var noButton: UIButton!
@@ -15,6 +16,11 @@ final class MovieQuizViewController: UIViewController {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        textLabel.font = UIFont(name: "YS Display Bold", size: 23)
+        questionLabel.font = UIFont(name: "YS Display", size: 20)
+        counterLabel.font = UIFont(name: "YS Display", size: 20)
+        yesButton.titleLabel?.font = UIFont(name: "YS Display", size: 20)
+        noButton.titleLabel?.font = UIFont(name: "YS Display", size: 20)
         presenter = MovieQuizPresenter(viewController: self)
     }
     
